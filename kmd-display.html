@@ -111,7 +111,7 @@
         }
 
         /* ── App Shell ── */
-        #app { display: none; min-height: 100vh; }
+        #app { display: none; min-height: 100vh; flex-direction: column; }
         .app-header {
             display: flex;
             align-items: center;
@@ -186,11 +186,13 @@
         /* ── Single Key View ── */
         #single-view {
             display: flex;
-            align-items: stretch;
+            align-items: center;
             padding: 24px;
             gap: 20px;
             max-width: 1200px;
             margin: 0 auto;
+            flex: 1;
+            width: 100%;
         }
         .chart-area {
             flex: 1;
@@ -206,7 +208,7 @@
         }
         .chart-container {
             position: relative;
-            height: 420px;
+            height: clamp(300px, 58vh, 600px);
         }
         .chart-container canvas { width: 100% !important; height: 100% !important; }
 
@@ -277,7 +279,7 @@
         }
 
         /* ── Grid View ── */
-        #grid-view { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; }
+        #grid-view { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
         .keys-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
@@ -410,7 +412,7 @@
                 flex-wrap: wrap;
                 justify-content: center;
             }
-            .metric { flex: 1; min-width: 100px; max-width: 150px; }
+            .metric { min-width: 100px; max-width: 150px; }
             .chart-container { height: 320px; }
             #nav-prev { left: 4px; }
             #nav-next { right: 4px; }
@@ -577,7 +579,7 @@ function loadData(data) {
 
     currentKeyIndex = validIndices[0];
     document.getElementById('landing').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    document.getElementById('app').style.display = 'flex';
     document.getElementById('piano-name').textContent = data.pianoname || 'Untitled Piano';
 
     switchView('single');
