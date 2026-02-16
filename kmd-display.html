@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMD Piano Data Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-page: #f5f3ef;
+            --bg-surface: #ffffff;
+            --bg-surface-alt: #f9f7f4;
+            --bg-black-key: #efece6;
+            --text-primary: #1a1a2e;
+            --text-secondary: #5a5a6e;
+            --text-muted: #8a8a9a;
+            --accent: #7a6548;
+            --accent-hover: #5e4d36;
+            --accent-light: rgba(122, 101, 72, 0.08);
+            --border: #e5e2dc;
+            --border-light: #eeebe6;
+            --curve-down: #3b6fd4;
+            --curve-up: #1a9e5c;
+            --tw-line: #555;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.05);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        html { font-size: 15px; }
+        body {
+            font-family: var(--font);
+            background: var(--bg-page);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* ── Landing Page ── */
+        #landing {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: linear-gradient(160deg, #f5f3ef 0%, #ebe7df 100%);
+        }
+        #landing h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        #landing .subtitle {
+            font-size: 0.93rem;
+            color: var(--text-secondary);
+            margin-bottom: 36px;
+            text-align: center;
+            max-width: 420px;
+            line-height: 1.6;
+        }
+        .drop-zone {
+            width: 500px;
+            max-width: 92vw;
+            padding: 56px 40px;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.25s, background 0.25s;
+            background: var(--bg-surface);
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+        .drop-zone svg {
+            margin-bottom: 16px;
+            opacity: 0.55;
+            transition: opacity 0.25s;
+        }
+        .drop-zone:hover svg, .drop-zone.dragover svg { opacity: 0.85; }
+        .drop-zone p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+        .drop-zone .browse-label {
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        #error-msg {
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #fef2f2;
+            color: #b91c1c;
+            border-radius: var(--radius-sm);
+            font-size: 0.88rem;
+            max-width: 500px;
+            display: none;
+        }
+
+        /* ── App Shell ── */
+        #app { display: none; min-height: 100vh; }
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 24px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .piano-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        .key-info {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            text-align: center;
+            flex: 1;
+            min-width: 0;
+        }
+        .key-info .key-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .key-info .note-label {
+            color: var(--accent);
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .key-info .key-count {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+        .view-toggle {
+            display: inline-flex;
+            background: var(--bg-page);
+            border-radius: var(--radius-sm);
+            padding: 3px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .view-toggle button {
+            padding: 7px 18px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .view-toggle button.active {
+            background: var(--bg-surface);
+            box-shadow: var(--shadow-sm);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .view-toggle button:hover:not(.active) {
+            color: var(--text-primary);
+        }
+
+        /* ── Single Key View ── */
+        #single-view {
+            display: flex;
+            align-items: stretch;
+            padding: 24px;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .chart-area {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+        }
+        .chart-wrapper {
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            padding: 20px 20px 16px;
+            position: relative;
+        }
+        .chart-container {
+            position: relative;
+            height: 420px;
+        }
+        .chart-container canvas { width: 100% !important; height: 100% !important; }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            z-index: 10;
+            box-shadow: var(--shadow-md);
+            line-height: 1;
+        }
+        .nav-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-50%) scale(1.08);
+            box-shadow: var(--shadow-lg);
+        }
+        .nav-btn:active { transform: translateY(-50%) scale(0.96); }
+        #nav-prev { left: -22px; }
+        #nav-next { right: -22px; }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 150px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .metric {
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            padding: 14px 12px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s;
+        }
+        .metric:hover { box-shadow: var(--shadow-md); }
+        .metric-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .metric-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+        .metric-unit {
+            font-size: 0.78rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        /* ── Grid View ── */
+        #grid-view { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; }
+        .keys-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+            gap: 14px;
+        }
+        .key-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            border: 2px solid transparent;
+        }
+        .key-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent);
+        }
+        .key-card.black-key { background: var(--bg-black-key); }
+        .key-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+        .key-card-num {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .key-card-note {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .key-card-note .sharp-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 12px;
+            background: #333;
+            border-radius: 2px;
+            vertical-align: middle;
+            margin-right: 3px;
+        }
+        .mini-chart-container { height: 80px; margin-bottom: 8px; }
+        .mini-chart-container canvas { width: 100% !important; height: 100% !important; }
+        .key-card-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .key-card-stats span { white-space: nowrap; }
+        .key-card-stats .stat-val { font-weight: 600; color: var(--text-secondary); }
+
+        /* ── Footer ── */
+        .app-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-surface);
+            flex-wrap: wrap;
+        }
+        .app-footer button {
+            padding: 8px 18px;
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+            border-radius: var(--radius-sm);
+            font-size: 0.84rem;
+            font-family: var(--font);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .app-footer button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+        .app-footer button.primary {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .app-footer button.primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+        .app-footer .separator {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+            margin: 0 6px;
+        }
+
+        /* ── Legend ── */
+        .chart-legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 8px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+        .chart-legend span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-swatch {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            #single-view {
+                flex-direction: column;
+                padding: 16px;
+            }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .metric { flex: 1; min-width: 100px; max-width: 150px; }
+            .chart-container { height: 320px; }
+            #nav-prev { left: 4px; }
+            #nav-next { right: 4px; }
+            .nav-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 15px;
+            }
+        }
+        @media (max-width: 600px) {
+            .app-header { padding: 10px 16px; }
+            .piano-name { font-size: 1rem; }
+            .keys-grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 10px; }
+            .chart-container { height: 260px; }
+        }
+    </style>
+</head>
+<body>
+
+<script id="embedded-data" type="application/json">null</script>
+
+<!-- ═══ Landing Page ═══ -->
+<div id="landing">
+    <h1>KMD Piano Data Viewer</h1>
+    <p class="subtitle">
+        Open and view KMD measurement files without the device connected.
+        View touchweight curves, key-dip, friction, and more for every key.
+    </p>
+    <div class="drop-zone" id="drop-zone">
+        <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#7a6548" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M24 30V8"/>
+            <path d="M16 16l8-8 8 8"/>
+            <path d="M8 28v10a4 4 0 004 4h24a4 4 0 004-4V28"/>
+        </svg>
+        <p>Drag &amp; drop a KMD <strong>.json</strong> file here</p>
+        <p>or <span class="browse-label">click to browse</span></p>
+    </div>
+    <input type="file" id="file-input" accept=".json" hidden>
+    <div id="error-msg"></div>
+</div>
+
+<!-- ═══ Main Application ═══ -->
+<div id="app">
+    <header class="app-header">
+        <div class="piano-name" id="piano-name"></div>
+        <div class="key-info" id="key-info"></div>
+        <div class="view-toggle">
+            <button id="btn-single" class="active" onclick="switchView('single')">Single Key</button>
+            <button id="btn-all" onclick="switchView('grid')">All Keys</button>
+        </div>
+    </header>
+
+    <!-- Single Key Detail -->
+    <div id="single-view">
+        <div class="chart-area">
+            <div class="chart-wrapper">
+                <button class="nav-btn" id="nav-prev" onclick="navigateKey(-1)" title="Previous key (Left arrow)">&#9664;</button>
+                <div class="chart-container">
+                    <canvas id="main-chart"></canvas>
+                </div>
+                <button class="nav-btn" id="nav-next" onclick="navigateKey(1)" title="Next key (Right arrow)">&#9654;</button>
+            </div>
+            <div class="chart-legend">
+                <span><span class="legend-swatch" style="background:var(--curve-down)"></span>Downstroke</span>
+                <span><span class="legend-swatch" style="background:var(--curve-up)"></span>Upstroke</span>
+                <span><span class="legend-swatch" style="background:var(--tw-line); height:12px; width:2px; border-left:2px dashed var(--tw-line); background:none;"></span>Analysis Range</span>
+            </div>
+        </div>
+        <div class="sidebar" id="sidebar">
+            <div class="metric"><div class="metric-label">Down Weight</div><div class="metric-value" id="val-dw">--</div></div>
+            <div class="metric"><div class="metric-label">Balance</div><div class="metric-value" id="val-bal">--</div></div>
+            <div class="metric"><div class="metric-label">Up Weight</div><div class="metric-value" id="val-uw">--</div></div>
+            <div class="metric"><div class="metric-label">Friction</div><div class="metric-value" id="val-fri">--</div></div>
+            <div class="metric"><div class="metric-label">Key-dip</div><div class="metric-value" id="val-dip">--</div></div>
+        </div>
+    </div>
+
+    <!-- All Keys Grid -->
+    <div id="grid-view">
+        <div class="keys-grid" id="keys-grid"></div>
+    </div>
+
+    <footer class="app-footer">
+        <button class="primary" onclick="exportShareableHTML()">Save Shareable HTML</button>
+        <button onclick="exportPNG()">Export Chart as PNG</button>
+        <button onclick="exportCSV()">Export Summary CSV</button>
+        <div class="separator"></div>
+        <button onclick="loadNewFile()">Load Different File</button>
+    </footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   KMD Piano Data Viewer — All-in-one JavaScript
+   ═══════════════════════════════════════════════════════════════ */
+
+// Capture original HTML before DOM changes (for shareable export)
+const ORIGINAL_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+// ── Constants ──
+const NOTE_NAMES = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+const BLACK_KEY_OFFSETS = new Set([1, 4, 6, 9, 11]); // A#, C#, D#, F#, G#
+
+// ── State ──
+let kmdData = null;
+let validIndices = [];
+let currentKeyIndex = 0;
+let currentView = 'single';
+let singleChart = null;
+let miniCharts = {};
+let gridObserver = null;
+
+// ── Utilities ──
+function getNoteName(keyNumber) {
+    const noteIndex = (keyNumber - 1) % 12;
+    const octave = Math.floor((keyNumber - 1 + 9) / 12);
+    return NOTE_NAMES[noteIndex] + octave;
+}
+
+function isBlackKey(keyNumber) {
+    return BLACK_KEY_OFFSETS.has((keyNumber - 1) % 12);
+}
+
+function fmt(val, decimals) {
+    if (val == null || isNaN(val)) return '--';
+    return val.toFixed(decimals !== undefined ? decimals : 1);
+}
+
+// ── Data Loading ──
+function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+function hideError() {
+    document.getElementById('error-msg').style.display = 'none';
+}
+
+function validateData(data) {
+    const required = ['pianoname', 'keynumber_data', 'xyvalues_data',
+        'downweight_data', 'upweight_data', 'balanceweight_data',
+        'friction_data', 'keydip_data'];
+    for (const key of required) {
+        if (!(key in data)) throw new Error('Missing required field: ' + key);
+    }
+    if (!Array.isArray(data.keynumber_data) || data.keynumber_data.length < 2) {
+        throw new Error('keynumber_data must be an array with at least one key');
+    }
+}
+
+function loadData(data) {
+    validateData(data);
+    kmdData = data;
+
+    // Build list of valid key indices
+    validIndices = [];
+    for (let i = 0; i < data.keynumber_data.length; i++) {
+        if (data.keynumber_data[i] != null && data.xyvalues_data[i] != null) {
+            validIndices.push(i);
+        }
+    }
+    if (validIndices.length === 0) throw new Error('No valid key data found in file');
+
+    currentKeyIndex = validIndices[0];
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('piano-name').textContent = data.pianoname || 'Untitled Piano';
+
+    switchView('single');
+}
+
+function readJSONFile(file) {
+    hideError();
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            loadData(data);
+        } catch (err) {
+            showError('Could not read file: ' + err.message);
+        }
+    };
+    reader.onerror = function() { showError('Error reading file.'); };
+    reader.readAsText(file);
+}
+
+// ── Chart Creation ──
+function splitCurves(xyData) {
+    if (!xyData || xyData.length === 0) return { down: [], up: [] };
+    // Find the index with max x (the turnaround point)
+    let maxXIdx = 0;
+    let maxX = -Infinity;
+    for (let i = 0; i < xyData.length; i++) {
+        if (xyData[i].x > maxX) { maxX = xyData[i].x; maxXIdx = i; }
+    }
+    const down = xyData.slice(0, maxXIdx + 1).map(p => ({ x: p.x, y: p.y }));
+    const up = xyData.slice(maxXIdx).map(p => ({ x: p.x, y: p.y }));
+    return { down, up };
+}
+
+function getChartConfig(keyIndex, mini) {
+    const xyData = kmdData.xyvalues_data[keyIndex];
+    const { down, up } = splitCurves(xyData);
+    const twWindow = kmdData.twwindow_data ? kmdData.twwindow_data[keyIndex] : null;
+
+    const annotations = {};
+    if (!mini && twWindow && twWindow.length >= 2) {
+        annotations.twLeft = {
+            type: 'line',
+            xMin: twWindow[0].x,
+            xMax: twWindow[0].x,
+            borderColor: 'rgba(80,80,80,0.6)',
+            borderWidth: 2,
+            borderDash: [6, 4],
+        };
+        annotations.twRight = {
+            type: 'line',
+            xMin: twWindow[1].x,
+            xMax: twWindow[1].x,
+            borderColor: 'rgba(80,80,80,0.6)',
+            borderWidth: 2,
+            borderDash: [6, 4],
+        };
+    }
+
+    return {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Downstroke',
+                    data: down,
+                    showLine: true,
+                    borderColor: getComputedStyle(document.documentElement).getPropertyValue('--curve-down').trim(),
+                    backgroundColor: 'transparent',
+                    borderWidth: mini ? 1.5 : 2.5,
+                    pointRadius: 0,
+                    tension: 0.3,
+                    order: 1,
+                },
+                {
+                    label: 'Upstroke',
+                    data: up,
+                    showLine: true,
+                    borderColor: getComputedStyle(document.documentElement).getPropertyValue('--curve-up').trim(),
+                    backgroundColor: 'transparent',
+                    borderWidth: mini ? 1.5 : 2.5,
+                    pointRadius: 0,
+                    tension: 0.3,
+                    order: 2,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: mini ? false : { duration: 300 },
+            interaction: mini ? { mode: null } : { mode: 'nearest', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: mini ? { enabled: false } : {
+                    backgroundColor: 'rgba(30,30,50,0.88)',
+                    titleFont: { size: 12 },
+                    bodyFont: { size: 12 },
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + 'g at ' + fmt(ctx.parsed.x) + 'mm';
+                        }
+                    }
+                },
+                annotation: Object.keys(annotations).length > 0 ? { annotations } : undefined,
+            },
+            scales: {
+                x: mini ? { display: false, min: 0 } : {
+                    title: { display: true, text: 'Keystroke Position (mm)', font: { size: 13 }, color: '#666' },
+                    min: 0,
+                    grid: { color: '#eee' },
+                    ticks: { color: '#888', font: { size: 11 } },
+                },
+                y: mini ? { display: false, min: 0 } : {
+                    title: { display: true, text: 'Touchweight (grams)', font: { size: 13 }, color: '#666' },
+                    min: 0,
+                    grid: { color: '#eee' },
+                    ticks: { color: '#888', font: { size: 11 } },
+                },
+            },
+        },
+    };
+}
+
+function createSingleChart() {
+    const canvas = document.getElementById('main-chart');
+    if (singleChart) { singleChart.destroy(); singleChart = null; }
+    singleChart = new Chart(canvas, getChartConfig(currentKeyIndex, false));
+}
+
+function updateSingleChart() {
+    if (!singleChart) { createSingleChart(); return; }
+    const xyData = kmdData.xyvalues_data[currentKeyIndex];
+    const { down, up } = splitCurves(xyData);
+    const twWindow = kmdData.twwindow_data ? kmdData.twwindow_data[currentKeyIndex] : null;
+
+    singleChart.data.datasets[0].data = down;
+    singleChart.data.datasets[1].data = up;
+
+    // Update annotation lines
+    if (singleChart.options.plugins.annotation && twWindow && twWindow.length >= 2) {
+        const ann = singleChart.options.plugins.annotation.annotations;
+        if (ann.twLeft) { ann.twLeft.xMin = twWindow[0].x; ann.twLeft.xMax = twWindow[0].x; }
+        if (ann.twRight) { ann.twRight.xMin = twWindow[1].x; ann.twRight.xMax = twWindow[1].x; }
+    } else if (twWindow && twWindow.length >= 2) {
+        singleChart.options.plugins.annotation = {
+            annotations: {
+                twLeft: { type: 'line', xMin: twWindow[0].x, xMax: twWindow[0].x, borderColor: 'rgba(80,80,80,0.6)', borderWidth: 2, borderDash: [6, 4] },
+                twRight: { type: 'line', xMin: twWindow[1].x, xMax: twWindow[1].x, borderColor: 'rgba(80,80,80,0.6)', borderWidth: 2, borderDash: [6, 4] },
+            }
+        };
+    }
+
+    singleChart.update('none');
+}
+
+// ── UI Updates ──
+function updateSidebar() {
+    const idx = currentKeyIndex;
+    document.getElementById('val-dw').innerHTML = fmt(kmdData.downweight_data[idx]) + '<span class="metric-unit">g</span>';
+    document.getElementById('val-bal').innerHTML = fmt(kmdData.balanceweight_data[idx]) + '<span class="metric-unit">g</span>';
+    document.getElementById('val-uw').innerHTML = fmt(kmdData.upweight_data[idx]) + '<span class="metric-unit">g</span>';
+    document.getElementById('val-fri').innerHTML = fmt(kmdData.friction_data[idx]) + '<span class="metric-unit">g</span>';
+    document.getElementById('val-dip').innerHTML = fmt(kmdData.keydip_data[idx]) + '<span class="metric-unit">mm</span>';
+}
+
+function updateHeader() {
+    const keyNum = kmdData.keynumber_data[currentKeyIndex];
+    const noteName = getNoteName(keyNum);
+    const pos = validIndices.indexOf(currentKeyIndex);
+    const total = validIndices.length;
+    document.getElementById('key-info').innerHTML =
+        '<span class="key-label">Key ' + keyNum + '</span>' +
+        '<span class="note-label">' + noteName + '</span>' +
+        '<span class="key-count">(' + (pos + 1) + ' of ' + total + ')</span>';
+}
+
+function renderSingleView() {
+    updateSingleChart();
+    updateSidebar();
+    updateHeader();
+}
+
+function navigateKey(delta) {
+    const pos = validIndices.indexOf(currentKeyIndex);
+    let newPos = pos + delta;
+    if (newPos < 0) newPos = validIndices.length - 1;
+    if (newPos >= validIndices.length) newPos = 0;
+    currentKeyIndex = validIndices[newPos];
+    renderSingleView();
+}
+
+// ── Grid View ──
+function destroyMiniCharts() {
+    for (const key in miniCharts) {
+        if (miniCharts[key]) miniCharts[key].destroy();
+    }
+    miniCharts = {};
+    if (gridObserver) { gridObserver.disconnect(); gridObserver = null; }
+}
+
+function buildGrid() {
+    const grid = document.getElementById('keys-grid');
+    grid.innerHTML = '';
+    destroyMiniCharts();
+
+    validIndices.forEach(function(idx) {
+        const keyNum = kmdData.keynumber_data[idx];
+        const note = getNoteName(keyNum);
+        const black = isBlackKey(keyNum);
+
+        const card = document.createElement('div');
+        card.className = 'key-card' + (black ? ' black-key' : '');
+        card.dataset.keyIndex = idx;
+
+        const dw = kmdData.downweight_data[idx];
+        const uw = kmdData.upweight_data[idx];
+        const dip = kmdData.keydip_data[idx];
+
+        card.innerHTML =
+            '<div class="key-card-header">' +
+                '<span class="key-card-num">Key ' + keyNum + '</span>' +
+                '<span class="key-card-note">' + (black ? '<span class="sharp-indicator"></span>' : '') + note + '</span>' +
+            '</div>' +
+            '<div class="mini-chart-container"><canvas></canvas></div>' +
+            '<div class="key-card-stats">' +
+                '<span>DW <span class="stat-val">' + fmt(dw) + 'g</span></span>' +
+                '<span>UW <span class="stat-val">' + fmt(uw) + 'g</span></span>' +
+                '<span>Dip <span class="stat-val">' + fmt(dip) + 'mm</span></span>' +
+            '</div>';
+
+        card.addEventListener('click', function() {
+            currentKeyIndex = idx;
+            switchView('single');
+        });
+
+        grid.appendChild(card);
+    });
+
+    // Lazy-render mini charts
+    gridObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                const card = entry.target;
+                const idx = parseInt(card.dataset.keyIndex);
+                const canvas = card.querySelector('canvas');
+                if (!miniCharts[idx]) {
+                    miniCharts[idx] = new Chart(canvas, getChartConfig(idx, true));
+                }
+                gridObserver.unobserve(card);
+            }
+        });
+    }, { rootMargin: '200px' });
+
+    grid.querySelectorAll('.key-card').forEach(function(card) {
+        gridObserver.observe(card);
+    });
+}
+
+// ── View Switching ──
+function switchView(view) {
+    currentView = view;
+    const singleView = document.getElementById('single-view');
+    const gridView = document.getElementById('grid-view');
+    const btnSingle = document.getElementById('btn-single');
+    const btnAll = document.getElementById('btn-all');
+
+    if (view === 'single') {
+        destroyMiniCharts();
+        gridView.style.display = 'none';
+        singleView.style.display = '';
+        btnSingle.classList.add('active');
+        btnAll.classList.remove('active');
+        renderSingleView();
+    } else {
+        if (singleChart) { singleChart.destroy(); singleChart = null; }
+        singleView.style.display = 'none';
+        gridView.style.display = 'block';
+        btnAll.classList.add('active');
+        btnSingle.classList.remove('active');
+        buildGrid();
+    }
+}
+
+// ── Export Functions ──
+function exportShareableHTML() {
+    if (!kmdData) return;
+    const dataStr = btoa(unescape(encodeURIComponent(JSON.stringify(kmdData))));
+    const exportHTML = ORIGINAL_HTML.replace(
+        '<script id="embedded-data" type="application/json">null<\/script>',
+        '<script id="embedded-data" type="application/json">' + dataStr + '<\/script>'
+    );
+    downloadBlob(exportHTML, 'KMD-' + (kmdData.pianoname || 'piano') + '.html', 'text/html');
+}
+
+function exportPNG() {
+    if (!singleChart) return;
+    const link = document.createElement('a');
+    link.download = 'KMD-Key' + kmdData.keynumber_data[currentKeyIndex] + '-' + getNoteName(kmdData.keynumber_data[currentKeyIndex]) + '.png';
+    link.href = singleChart.toBase64Image();
+    link.click();
+}
+
+function exportCSV() {
+    if (!kmdData) return;
+    let csv = 'Key,Note,Down Weight (g),Up Weight (g),Balance (g),Friction (g),Key Dip (mm)\n';
+    validIndices.forEach(function(idx) {
+        const kn = kmdData.keynumber_data[idx];
+        csv += kn + ',' + getNoteName(kn) + ',' +
+            fmt(kmdData.downweight_data[idx]) + ',' +
+            fmt(kmdData.upweight_data[idx]) + ',' +
+            fmt(kmdData.balanceweight_data[idx]) + ',' +
+            fmt(kmdData.friction_data[idx]) + ',' +
+            fmt(kmdData.keydip_data[idx]) + '\n';
+    });
+    downloadBlob(csv, 'KMD-' + (kmdData.pianoname || 'piano') + '-summary.csv', 'text/csv');
+}
+
+function downloadBlob(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function loadNewFile() {
+    if (singleChart) { singleChart.destroy(); singleChart = null; }
+    destroyMiniCharts();
+    kmdData = null;
+    validIndices = [];
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('landing').style.display = '';
+}
+
+// ── Event Listeners ──
+
+// Drag and drop
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', function() {
+    dropZone.classList.remove('dragover');
+});
+dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) readJSONFile(file);
+});
+dropZone.addEventListener('click', function() {
+    document.getElementById('file-input').click();
+});
+document.getElementById('file-input').addEventListener('change', function(e) {
+    if (e.target.files[0]) readJSONFile(e.target.files[0]);
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    if (!kmdData) return;
+    if (currentView === 'single') {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); navigateKey(-1); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); navigateKey(1); }
+    }
+    if (e.key === 'Escape') {
+        if (currentView === 'single') switchView('grid');
+        else switchView('single');
+    }
+});
+
+// ── Initialization ──
+(function init() {
+    // Check for CDN availability
+    if (typeof Chart === 'undefined') {
+        document.getElementById('landing').innerHTML =
+            '<h1>KMD Piano Data Viewer</h1>' +
+            '<p class="subtitle" style="color:#b91c1c">Chart.js could not be loaded. Please check your internet connection and refresh the page.</p>';
+        return;
+    }
+
+    // Check for embedded data
+    const embeddedEl = document.getElementById('embedded-data');
+    if (embeddedEl) {
+        const content = embeddedEl.textContent.trim();
+        if (content && content !== 'null') {
+            try {
+                const jsonStr = decodeURIComponent(escape(atob(content)));
+                const data = JSON.parse(jsonStr);
+                loadData(data);
+                return;
+            } catch (e) {
+                // Embedded data invalid, fall through to landing page
+            }
+        }
+    }
+
+    // Show landing page
+    document.getElementById('landing').style.display = '';
+})();
+</script>
+
+</body>
+</html>
