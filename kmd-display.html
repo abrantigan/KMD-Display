@@ -32,6 +32,11 @@
             --radius-md: 12px;
             --radius-lg: 16px;
             --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --color-down:     #5b9bd5;
+            --color-balance:  #2ab3a3;
+            --color-up:       #8b6db5;
+            --color-friction: #e05c3a;
+            --color-keydip:   #3a9c4a;
         }
 
         html { font-size: 15px; }
@@ -109,6 +114,166 @@
             max-width: 500px;
             display: none;
         }
+        .version-history {
+            margin-top: 36px;
+            width: 500px;
+            max-width: 92vw;
+            text-align: left;
+        }
+        .version-history summary {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .version-history summary::before {
+            content: '▶';
+            font-size: 0.6rem;
+            transition: transform 0.2s;
+        }
+        .version-history[open] summary::before { transform: rotate(90deg); }
+        .version-history summary:hover { color: var(--text-secondary); }
+        .version-history-entries {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .version-entry {
+            display: flex;
+            gap: 14px;
+            font-size: 0.84rem;
+        }
+        .version-tag {
+            font-weight: 700;
+            color: var(--accent);
+            white-space: nowrap;
+            min-width: 28px;
+        }
+        .version-date {
+            color: var(--text-muted);
+            white-space: nowrap;
+            font-size: 0.78rem;
+            padding-top: 1px;
+        }
+        .version-notes {
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ── Easter Egg: Mini Game ── */
+        .game-trigger {
+            position: fixed; bottom: 16px; right: 18px;
+            font-size: 1.2rem; cursor: pointer; opacity: 0.15;
+            transition: opacity 0.3s, transform 0.3s;
+            user-select: none; z-index: 200; line-height: 1;
+        }
+        .game-trigger:hover { opacity: 1; transform: scale(1.35) rotate(-15deg); }
+        #game-modal {
+            position: fixed; inset: 0; background: rgba(8,8,20,0.85);
+            z-index: 9999; display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(6px);
+        }
+        #game-container {
+            background: linear-gradient(160deg, #1e1b4b 0%, #12122a 100%);
+            border-radius: 20px; padding: 26px 22px 20px;
+            width: min(510px, 94vw); color: white; text-align: center;
+            position: relative; box-shadow: 0 28px 90px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.07);
+        }
+        .g-title {
+            font-size: 1.45rem; font-weight: 800; margin-bottom: 4px;
+            background: linear-gradient(135deg, #a29bfe, #fd79a8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .g-sub { font-size: 0.78rem; color: rgba(255,255,255,0.38); margin-bottom: 18px; letter-spacing: 0.5px; }
+        .g-rules {
+            background: rgba(255,255,255,0.06); border-radius: 10px;
+            padding: 12px 14px; margin-bottom: 20px; text-align: left;
+            font-size: 0.83rem; line-height: 2;
+        }
+        .g-rule-row { display: flex; align-items: center; gap: 10px; }
+        .g-rule-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+        .g-btn {
+            background: linear-gradient(135deg, #a29bfe, #fd79a8); color: white; border: none;
+            padding: 10px 26px; border-radius: 10px; font-size: 0.93rem; font-weight: 700;
+            cursor: pointer; font-family: var(--font);
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 4px 18px rgba(162,155,254,0.4);
+        }
+        .g-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(162,155,254,0.55); }
+        .g-btn:active { transform: translateY(0); }
+        .g-btn-sec {
+            background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.72);
+            border: 1px solid rgba(255,255,255,0.14); padding: 10px 22px;
+            border-radius: 10px; font-size: 0.93rem; cursor: pointer; font-family: var(--font);
+            transition: background 0.2s;
+        }
+        .g-btn-sec:hover { background: rgba(255,255,255,0.14); }
+        .g-close-btn {
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(255,255,255,0.08); border: none; color: rgba(255,255,255,0.5);
+            width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px;
+            display: flex; align-items: center; justify-content: center; transition: background 0.2s;
+        }
+        .g-close-btn:hover { background: rgba(255,255,255,0.16); }
+        /* HUD */
+        .g-hud { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .g-hud-item { display: flex; flex-direction: column; align-items: center; }
+        .g-hud-label { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.6px; color: rgba(255,255,255,0.32); margin-bottom: 2px; }
+        .g-hud-val { font-size: 1.4rem; font-weight: 800; color: white; }
+        #g-lives { font-size: 1rem; color: #fd79a8; letter-spacing: 4px; }
+        /* Piano keyboard */
+        #gkb { position: relative; height: 130px; margin: 0 0 10px; }
+        .gk { position: absolute; top: 0; cursor: pointer; transition: filter 0.1s; overflow: visible; }
+        .gk-w {
+            height: 100%; background: #f0ece4;
+            border-radius: 0 0 7px 7px; border: 1px solid #bbb; border-top: none;
+            z-index: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-end; padding-bottom: 6px;
+        }
+        .gk-b {
+            height: 63%; background: #16213e;
+            border-radius: 0 0 5px 5px; border: 1px solid #0a0a1a; border-top: none;
+            z-index: 2; box-shadow: 0 5px 10px rgba(0,0,0,0.55);
+        }
+        .gk-label { font-size: 0.58rem; color: #999; font-weight: 600; }
+        .gk-w:hover { filter: brightness(0.94); }
+        .gk-b:hover { filter: brightness(1.3); }
+        .gk-w:active, .gk-b:active { transform: translateY(2px); }
+        /* Active states */
+        .gk-heavy { background: #ff7675 !important; box-shadow: 0 0 14px rgba(255,118,117,0.65) !important; }
+        .gk-light  { background: #74b9ff !important; box-shadow: 0 0 14px rgba(116,185,255,0.65) !important; }
+        .gk-good   { background: #55efc4 !important; box-shadow: 0 0 14px rgba(85,239,196,0.65) !important; }
+        /* Badge */
+        .gk-badge {
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+            background: rgba(8,8,24,0.92); color: white; font-size: 0.68rem; font-weight: 700;
+            padding: 3px 7px; border-radius: 6px; white-space: nowrap;
+            z-index: 20; pointer-events: none; border: 1px solid rgba(255,255,255,0.12);
+        }
+        /* Progress bar */
+        .gk-bar { position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; border-radius: 2px; animation: gk-shrink linear forwards; }
+        .gk-heavy .gk-bar { background: rgba(255,60,60,0.75); }
+        .gk-light .gk-bar  { background: rgba(60,150,255,0.75); }
+        .gk-good  .gk-bar  { background: rgba(40,200,140,0.75); }
+        @keyframes gk-shrink { from { width: 100%; } to { width: 0; } }
+        /* Feedback */
+        #g-msg { height: 22px; font-size: 0.87rem; font-weight: 700; margin-bottom: 2px; }
+        .g-pulse { animation: g-pulse-anim 0.28s ease; }
+        @keyframes g-pulse-anim { 50% { transform: scale(1.45); color: #55efc4; } }
+        .g-shake { animation: g-shake-anim 0.32s ease; }
+        @keyframes g-shake-anim { 20%,60% { transform: translateX(-7px); } 40%,80% { transform: translateX(7px); } }
+        /* End screen */
+        .g-end-reason { font-size: 1.35rem; font-weight: 800; margin-bottom: 10px; background: linear-gradient(135deg, #a29bfe, #fd79a8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .g-newbest { display: inline-block; background: linear-gradient(135deg, #ffd32a, #ff5e57); color: white; font-size: 0.76rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; margin-bottom: 8px; letter-spacing: 0.3px; }
+        .g-end-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.6px; color: rgba(255,255,255,0.38); margin-bottom: 2px; }
+        .g-end-score { font-size: 2.2rem; font-weight: 900; color: white; }
+        .g-end-best { font-size: 0.86rem; color: rgba(255,255,255,0.4); margin: 5px 0 9px; }
+        .g-end-grade { font-size: 1rem; color: #a29bfe; font-weight: 700; margin-bottom: 18px; }
 
         /* ── App Shell ── */
         #app { display: none; min-height: 100vh; flex-direction: column; }
@@ -278,6 +443,76 @@
             color: var(--text-muted);
         }
 
+        /* ── Overview View ── */
+        #overview-view {
+            display: none;
+            flex: 1;
+            width: 100%;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        #overview-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        #overview-chart-area {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            height: clamp(300px, 65vh, 650px);
+        }
+        #overview-chart-area canvas { width: 100% !important; height: 100% !important; }
+        #overview-sidebar {
+            width: 160px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 4px;
+        }
+        .overview-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            background: var(--bg-surface);
+            font-family: var(--font);
+            text-align: left;
+            width: 100%;
+            transition: opacity 0.2s, box-shadow 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+        .overview-toggle:hover { box-shadow: var(--shadow-md); }
+        .overview-toggle.hidden-metric { opacity: 0.35; }
+        .overview-toggle-dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .overview-toggle-info { flex: 1; min-width: 0; }
+        .overview-toggle-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        .overview-toggle-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
         /* ── Grid View ── */
         #grid-view { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
         .keys-grid {
@@ -434,6 +669,57 @@
 
 <script id="embedded-data" type="application/json">null</script>
 
+<!-- ═══ Easter Egg: Mini Game ═══ -->
+<div class="game-trigger" onclick="openEasterEgg()" title="pssst...">🎹</div>
+
+<div id="game-modal" onclick="if(event.target===this)closeEasterEgg()">
+    <div id="game-container">
+        <!-- Start screen -->
+        <div id="game-start">
+            <div class="g-title">🎹 Regulate That Key!</div>
+            <div class="g-sub">Piano Technician Simulator</div>
+            <div class="g-rules">
+                <div class="g-rule-row"><span class="g-rule-dot" style="background:#ff7675"></span><span><strong>Red</strong> — too heavy (&gt;58g). Click to fix!</span></div>
+                <div class="g-rule-row"><span class="g-rule-dot" style="background:#74b9ff"></span><span><strong>Blue</strong> — too light (&lt;42g). Click to fix!</span></div>
+                <div class="g-rule-row"><span class="g-rule-dot" style="background:#55efc4"></span><span><strong>Green</strong> — in spec (42–58g). Don't touch!</span></div>
+            </div>
+            <button class="g-btn" onclick="startGame()">Start Tuning!</button>
+        </div>
+        <!-- Play screen -->
+        <div id="game-play" style="display:none">
+            <div class="g-hud">
+                <div class="g-hud-item">
+                    <span class="g-hud-label">Score</span>
+                    <span class="g-hud-val" id="g-score">0</span>
+                </div>
+                <div class="g-hud-item">
+                    <span id="g-lives">♥♥♥</span>
+                </div>
+                <div class="g-hud-item">
+                    <span class="g-hud-label">Time</span>
+                    <span class="g-hud-val" id="g-time">60</span>
+                </div>
+            </div>
+            <div id="gkb"></div>
+            <div id="g-msg"></div>
+        </div>
+        <!-- Game over screen -->
+        <div id="game-over" style="display:none">
+            <div class="g-end-reason" id="g-reason">Time's up!</div>
+            <div class="g-newbest" id="g-newbest">🌟 New Best!</div>
+            <div class="g-end-label">Score</div>
+            <div class="g-end-score" id="g-final">0</div>
+            <div class="g-end-best">Best: <span id="g-best">0</span></div>
+            <div class="g-end-grade" id="g-grade"></div>
+            <div style="display:flex;gap:12px;justify-content:center">
+                <button class="g-btn" onclick="startGame()">Play Again</button>
+                <button class="g-btn-sec" onclick="closeEasterEgg()">Close</button>
+            </div>
+        </div>
+        <button class="g-close-btn" onclick="closeEasterEgg()">✕</button>
+    </div>
+</div>
+
 <!-- ═══ Landing Page ═══ -->
 <div id="landing">
     <h1>KMD Piano Data Viewer</h1>
@@ -452,6 +738,26 @@
     </div>
     <input type="file" id="file-input" accept=".json" hidden>
     <div id="error-msg"></div>
+    <details class="version-history">
+        <summary>Version history</summary>
+        <div class="version-history-entries">
+            <div class="version-entry">
+                <span class="version-tag">v3</span>
+                <span class="version-date">2026-02-18</span>
+                <span class="version-notes">Added version history. Added a secret easter egg — find the 🎹 and play <strong>Regulate That Key!</strong>, a piano technician mini game.</span>
+            </div>
+            <div class="version-entry">
+                <span class="version-tag">v2</span>
+                <span class="version-date">2026-02-18</span>
+                <span class="version-notes">Added <strong>All Keys</strong> overview chart — scatter plot of all 5 weight metrics (down, balance, up, friction, keydip) across all keys with per-metric toggle buttons. Renamed mini-chart grid to <strong>All Curves</strong>.</span>
+            </div>
+            <div class="version-entry">
+                <span class="version-tag">v1</span>
+                <span class="version-date">2026-02-15</span>
+                <span class="version-notes">Initial release — single key touchweight curves with analysis range, key-by-key navigation, mini-chart grid, shareable HTML export, PNG and CSV export.</span>
+            </div>
+        </div>
+    </details>
 </div>
 
 <!-- ═══ Main Application ═══ -->
@@ -461,7 +767,8 @@
         <div class="key-info" id="key-info"></div>
         <div class="view-toggle">
             <button id="btn-single" class="active" onclick="switchView('single')">Single Key</button>
-            <button id="btn-all" onclick="switchView('grid')">All Keys</button>
+            <button id="btn-overview" onclick="switchView('overview')">All Keys</button>
+            <button id="btn-all" onclick="switchView('grid')">All Curves</button>
         </div>
     </header>
 
@@ -490,7 +797,17 @@
         </div>
     </div>
 
-    <!-- All Keys Grid -->
+    <!-- All Keys Overview -->
+    <div id="overview-view">
+        <div id="overview-layout">
+            <div id="overview-chart-area">
+                <canvas id="overview-canvas"></canvas>
+            </div>
+            <div id="overview-sidebar"></div>
+        </div>
+    </div>
+
+    <!-- All Curves Grid -->
     <div id="grid-view">
         <div class="keys-grid" id="keys-grid"></div>
     </div>
@@ -522,8 +839,17 @@ let validIndices = [];
 let currentKeyIndex = 0;
 let currentView = 'single';
 let singleChart = null;
+let overviewChart = null;
 let miniCharts = {};
 let gridObserver = null;
+
+const METRIC_CONFIG = [
+    { label: 'Down weight',    field: 'downweight_data',    color: '#5b9bd5', unit: 'g' },
+    { label: 'Balance weight', field: 'balanceweight_data', color: '#2ab3a3', unit: 'g' },
+    { label: 'Up weight',      field: 'upweight_data',      color: '#8b6db5', unit: 'g' },
+    { label: 'Friction',       field: 'friction_data',      color: '#e05c3a', unit: 'g' },
+    { label: 'Keydip',         field: 'keydip_data',        color: '#3a9c4a', unit: 'mm' },
+];
 
 // ── Utilities ──
 function getNoteName(keyNumber) {
@@ -841,27 +1167,162 @@ function buildGrid() {
     });
 }
 
+// ── Overview View ──
+function buildOverview() {
+    if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
+    const canvas = document.getElementById('overview-canvas');
+    const datasets = METRIC_CONFIG.map(function(m) {
+        return {
+            label: m.label,
+            data: validIndices.map(function(i) { return { x: i, y: kmdData[m.field][i] }; }),
+            backgroundColor: m.color,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            showLine: false,
+        };
+    });
+    overviewChart = new Chart(canvas, {
+        type: 'scatter',
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 200 },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Key Number', font: { size: 13 }, color: '#666' },
+                    min: 0,
+                    max: 88,
+                    grid: { color: '#eee' },
+                    ticks: { color: '#888', font: { size: 11 } },
+                },
+                y: {
+                    title: { display: true, text: '(g) or (mm)', font: { size: 13 }, color: '#666' },
+                    min: 0,
+                    grid: { color: '#eee' },
+                    ticks: { color: '#888', font: { size: 11 } },
+                },
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(30,30,50,0.88)',
+                    titleFont: { size: 12 },
+                    bodyFont: { size: 12 },
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            const m = METRIC_CONFIG[ctx.datasetIndex];
+                            return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + m.unit;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: {
+                        selectedKey: {
+                            type: 'line',
+                            xMin: currentKeyIndex,
+                            xMax: currentKeyIndex,
+                            borderColor: 'rgba(0,0,0,0.35)',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                        }
+                    }
+                },
+            },
+            onClick: function(event) {
+                const xVal = overviewChart.scales.x.getValueForPixel(event.x);
+                if (xVal == null || validIndices.length === 0) return;
+                const nearest = validIndices.reduce(function(prev, curr) {
+                    return Math.abs(curr - xVal) < Math.abs(prev - xVal) ? curr : prev;
+                });
+                currentKeyIndex = nearest;
+                updateHeader();
+                updateOverviewSidebar();
+                const ann = overviewChart.options.plugins.annotation.annotations.selectedKey;
+                ann.xMin = nearest;
+                ann.xMax = nearest;
+                overviewChart.update('none');
+            },
+        },
+    });
+    buildOverviewSidebar();
+}
+
+function buildOverviewSidebar() {
+    const sidebar = document.getElementById('overview-sidebar');
+    sidebar.innerHTML = '';
+    METRIC_CONFIG.forEach(function(m, i) {
+        const btn = document.createElement('button');
+        btn.className = 'overview-toggle';
+        btn.dataset.index = i;
+        btn.innerHTML =
+            '<span class="overview-toggle-dot" style="background:' + m.color + '"></span>' +
+            '<span class="overview-toggle-info">' +
+                '<div class="overview-toggle-label">' + m.label + '</div>' +
+                '<div class="overview-toggle-value" id="ov-val-' + i + '">—</div>' +
+            '</span>';
+        btn.addEventListener('click', function() { toggleOverviewDataset(i); });
+        sidebar.appendChild(btn);
+    });
+    updateOverviewSidebar();
+}
+
+function updateOverviewSidebar() {
+    METRIC_CONFIG.forEach(function(m, i) {
+        const el = document.getElementById('ov-val-' + i);
+        if (!el) return;
+        const val = kmdData[m.field][currentKeyIndex];
+        el.textContent = val != null ? val.toFixed(1) + m.unit : '—';
+    });
+}
+
+function toggleOverviewDataset(index) {
+    const dataset = overviewChart.data.datasets[index];
+    dataset.hidden = !dataset.hidden;
+    const btn = document.querySelector('.overview-toggle[data-index="' + index + '"]');
+    btn.classList.toggle('hidden-metric', dataset.hidden);
+    overviewChart.update('none');
+}
+
 // ── View Switching ──
 function switchView(view) {
     currentView = view;
     const singleView = document.getElementById('single-view');
+    const overviewView = document.getElementById('overview-view');
     const gridView = document.getElementById('grid-view');
     const btnSingle = document.getElementById('btn-single');
+    const btnOverview = document.getElementById('btn-overview');
     const btnAll = document.getElementById('btn-all');
 
+    btnSingle.classList.remove('active');
+    btnOverview.classList.remove('active');
+    btnAll.classList.remove('active');
+
     if (view === 'single') {
+        if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
         destroyMiniCharts();
+        overviewView.style.display = 'none';
         gridView.style.display = 'none';
         singleView.style.display = '';
         btnSingle.classList.add('active');
-        btnAll.classList.remove('active');
         renderSingleView();
+    } else if (view === 'overview') {
+        if (singleChart) { singleChart.destroy(); singleChart = null; }
+        destroyMiniCharts();
+        singleView.style.display = 'none';
+        gridView.style.display = 'none';
+        overviewView.style.display = 'block';
+        btnOverview.classList.add('active');
+        buildOverview();
     } else {
         if (singleChart) { singleChart.destroy(); singleChart = null; }
+        if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
         singleView.style.display = 'none';
+        overviewView.style.display = 'none';
         gridView.style.display = 'block';
         btnAll.classList.add('active');
-        btnSingle.classList.remove('active');
         buildGrid();
     }
 }
@@ -914,11 +1375,265 @@ function downloadBlob(content, filename, mimeType) {
 
 function loadNewFile() {
     if (singleChart) { singleChart.destroy(); singleChart = null; }
+    if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
     destroyMiniCharts();
     kmdData = null;
     validIndices = [];
     document.getElementById('app').style.display = 'none';
     document.getElementById('landing').style.display = '';
+}
+
+// ── Easter Egg: Mini Game ──
+let gameActive = false;
+let gameScore = 0;
+let gameLives = 3;
+let gameTimeLeft = 60;
+let gameTimerInt = null;
+let gameSpawnInt = null;
+let gameAudio = null;
+let gameHighScore = 0;
+let gameCombo = 0;
+const keyTimers = new Map();
+
+const GAME_NOTES = [
+    { name: 'C',  black: false, whiteIdx: 0 },
+    { name: 'C#', black: true,  whiteLeft: 0 },
+    { name: 'D',  black: false, whiteIdx: 1 },
+    { name: 'D#', black: true,  whiteLeft: 1 },
+    { name: 'E',  black: false, whiteIdx: 2 },
+    { name: 'F',  black: false, whiteIdx: 3 },
+    { name: 'F#', black: true,  whiteLeft: 3 },
+    { name: 'G',  black: false, whiteIdx: 4 },
+    { name: 'G#', black: true,  whiteLeft: 4 },
+    { name: 'A',  black: false, whiteIdx: 5 },
+    { name: 'A#', black: true,  whiteLeft: 5 },
+    { name: 'B',  black: false, whiteIdx: 6 },
+];
+const GAME_FREQS = [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88];
+const G_HEAVY = 58, G_LIGHT = 42;
+
+function openEasterEgg() {
+    buildGameKeyboard();
+    showGamePanel('game-start');
+    document.getElementById('game-modal').style.display = 'flex';
+}
+
+function closeEasterEgg() {
+    stopGame();
+    document.getElementById('game-modal').style.display = 'none';
+}
+
+function showGamePanel(id) {
+    ['game-start', 'game-play', 'game-over'].forEach(function(s) {
+        document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+}
+
+function buildGameKeyboard() {
+    const kb = document.getElementById('gkb');
+    kb.innerHTML = '';
+    const W = 100 / 7;
+    const BW = W * 0.58;
+    GAME_NOTES.forEach(function(note, i) {
+        const key = document.createElement('div');
+        key.className = 'gk ' + (note.black ? 'gk-b' : 'gk-w');
+        key.id = 'gk-' + i;
+        if (note.black) {
+            const center = (note.whiteLeft + 0.65) * W;
+            key.style.left = (center - BW / 2) + '%';
+            key.style.width = BW + '%';
+        } else {
+            key.style.left = (note.whiteIdx * W) + '%';
+            key.style.width = W + '%';
+            key.innerHTML = '<span class="gk-label">' + note.name + '</span>';
+        }
+        key.addEventListener('click', (function(idx, isBlack) {
+            return function(e) { if (isBlack) e.stopPropagation(); onKeyClick(idx); };
+        })(i, note.black));
+        kb.appendChild(key);
+    });
+}
+
+function startGame() {
+    gameActive = true;
+    gameScore = 0; gameLives = 3; gameTimeLeft = 60; gameCombo = 0;
+    document.getElementById('g-score').textContent = '0';
+    document.getElementById('g-time').textContent = '60';
+    updateLives();
+    document.getElementById('g-msg').textContent = '';
+    document.querySelectorAll('.gk').forEach(clearKey);
+    showGamePanel('game-play');
+
+    gameTimerInt = setInterval(function() {
+        gameTimeLeft--;
+        document.getElementById('g-time').textContent = gameTimeLeft;
+        if (gameTimeLeft === 40 || gameTimeLeft === 20) {
+            clearInterval(gameSpawnInt);
+            gameSpawnInt = setInterval(trySpawn, gameTimeLeft === 40 ? 1400 : 1000);
+        }
+        if (gameTimeLeft <= 0) gameOver('time');
+    }, 1000);
+
+    trySpawn();
+    gameSpawnInt = setInterval(trySpawn, 1800);
+}
+
+function trySpawn() {
+    if (!gameActive) return;
+    const idle = Array.from(document.querySelectorAll('.gk')).filter(function(k) { return !k.dataset.active; });
+    if (idle.length === 0) return;
+    const key = idle[Math.floor(Math.random() * idle.length)];
+    const noteIdx = parseInt(key.id.replace('gk-', ''));
+
+    // Weight distribution: 35% light, 35% heavy, 30% in-spec
+    const r = Math.random();
+    let weight;
+    if (r < 0.35) weight = 30 + Math.random() * 11;       // light: 30–41
+    else if (r < 0.70) weight = 59 + Math.random() * 13;  // heavy: 59–72
+    else weight = G_LIGHT + Math.random() * (G_HEAVY - G_LIGHT); // good
+    weight = Math.round(weight * 10) / 10;
+
+    const type = weight > G_HEAVY ? 'heavy' : weight < G_LIGHT ? 'light' : 'good';
+    key.dataset.active = '1';
+    key.dataset.type = type;
+    key.classList.add('gk-' + type);
+
+    const badge = document.createElement('div');
+    badge.className = 'gk-badge';
+    badge.textContent = weight.toFixed(1) + 'g';
+    key.appendChild(badge);
+
+    const bar = document.createElement('div');
+    bar.className = 'gk-bar';
+    const dur = type === 'good' ? 1600 : 2400;
+    bar.style.animationDuration = dur + 'ms';
+    key.appendChild(bar);
+
+    const tid = setTimeout(function() {
+        if (!key.dataset.active) return;
+        if (type !== 'good') {
+            gameLives--;
+            updateLives();
+            flashMsg('Missed! ♩', '#ff7675');
+            gameCombo = 0;
+            if (gameLives <= 0) { gameOver('lives'); return; }
+        }
+        clearKey(key);
+    }, dur);
+    keyTimers.set(key, tid);
+}
+
+function onKeyClick(noteIdx) {
+    if (!gameActive) return;
+    const key = document.getElementById('gk-' + noteIdx);
+    if (!key || !key.dataset.active) return;
+    clearTimeout(keyTimers.get(key));
+    keyTimers.delete(key);
+    const type = key.dataset.type;
+    if (type === 'heavy' || type === 'light') {
+        gameCombo++;
+        const mult = gameCombo >= 5 ? 3 : gameCombo >= 3 ? 2 : 1;
+        const pts = 10 * mult;
+        gameScore += pts;
+        document.getElementById('g-score').textContent = gameScore;
+        playGameSound(noteIdx, true);
+        flashMsg('+' + pts + (gameCombo > 1 ? '  ×' + gameCombo + ' combo!' : ''), '#55efc4');
+        pulseScore();
+    } else {
+        gameLives--;
+        updateLives();
+        gameCombo = 0;
+        playGameSound(noteIdx, false);
+        flashMsg('In spec — don\'t touch! −♥', '#ff7675');
+        shakeGame();
+        if (gameLives <= 0) { gameOver('lives'); return; }
+    }
+    clearKey(key);
+}
+
+function clearKey(key) {
+    clearTimeout(keyTimers.get(key));
+    keyTimers.delete(key);
+    delete key.dataset.active;
+    delete key.dataset.type;
+    key.classList.remove('gk-heavy', 'gk-light', 'gk-good');
+    key.querySelectorAll('.gk-badge, .gk-bar').forEach(function(el) { el.remove(); });
+}
+
+function updateLives() {
+    document.getElementById('g-lives').textContent = '♥'.repeat(Math.max(0, gameLives)) + '♡'.repeat(Math.max(0, 3 - gameLives));
+}
+
+function flashMsg(text, color) {
+    const el = document.getElementById('g-msg');
+    el.textContent = text; el.style.color = color;
+    clearTimeout(el._t);
+    el._t = setTimeout(function() { el.textContent = ''; }, 1400);
+}
+
+function pulseScore() {
+    const el = document.getElementById('g-score');
+    el.classList.remove('g-pulse'); void el.offsetWidth; el.classList.add('g-pulse');
+    setTimeout(function() { el.classList.remove('g-pulse'); }, 300);
+}
+
+function shakeGame() {
+    const el = document.getElementById('game-container');
+    el.classList.remove('g-shake'); void el.offsetWidth; el.classList.add('g-shake');
+    setTimeout(function() { el.classList.remove('g-shake'); }, 350);
+}
+
+function gameOver(reason) {
+    gameActive = false;
+    clearInterval(gameTimerInt); clearInterval(gameSpawnInt);
+    document.querySelectorAll('.gk').forEach(clearKey);
+    const isNew = gameScore > gameHighScore;
+    if (isNew) gameHighScore = gameScore;
+    const grades = [
+        [150, '🏆 Master Technician!'],
+        [90,  '🥇 Expert Regulator!'],
+        [50,  '🎵 Competent Tuner'],
+        [20,  '🔧 Apprentice'],
+        [0,   '🎹 Keep practicing!'],
+    ];
+    const grade = grades.find(function(g) { return gameScore >= g[0]; })[1];
+    document.getElementById('g-reason').textContent = reason === 'lives' ? 'Out of lives!' : 'Time\'s up!';
+    document.getElementById('g-final').textContent = gameScore;
+    document.getElementById('g-best').textContent = gameHighScore;
+    document.getElementById('g-grade').textContent = grade;
+    document.getElementById('g-newbest').style.display = isNew ? '' : 'none';
+    showGamePanel('game-over');
+}
+
+function stopGame() {
+    gameActive = false;
+    clearInterval(gameTimerInt); gameTimerInt = null;
+    clearInterval(gameSpawnInt); gameSpawnInt = null;
+    keyTimers.forEach(function(tid) { clearTimeout(tid); });
+    keyTimers.clear();
+}
+
+function playGameSound(noteIdx, success) {
+    try {
+        if (!gameAudio) gameAudio = new (window.AudioContext || window.webkitAudioContext)();
+        const ac = gameAudio;
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        if (success) {
+            osc.type = 'triangle';
+            osc.frequency.value = GAME_FREQS[noteIdx];
+            gain.gain.setValueAtTime(0.16, ac.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.55);
+            osc.start(); osc.stop(ac.currentTime + 0.55);
+        } else {
+            osc.type = 'sawtooth';
+            osc.frequency.value = 85;
+            gain.gain.setValueAtTime(0.1, ac.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.22);
+            osc.start(); osc.stop(ac.currentTime + 0.22);
+        }
+    } catch(e) {}
 }
 
 // ── Event Listeners ──
@@ -953,8 +1668,7 @@ document.addEventListener('keydown', function(e) {
         if (e.key === 'ArrowRight') { e.preventDefault(); navigateKey(1); }
     }
     if (e.key === 'Escape') {
-        if (currentView === 'single') switchView('grid');
-        else switchView('single');
+        switchView('single');
     }
 });
 
