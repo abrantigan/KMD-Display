@@ -32,6 +32,11 @@
             --radius-md: 12px;
             --radius-lg: 16px;
             --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --color-down:     #5b9bd5;
+            --color-balance:  #2ab3a3;
+            --color-up:       #8b6db5;
+            --color-friction: #e05c3a;
+            --color-keydip:   #3a9c4a;
         }
 
         html { font-size: 15px; }
@@ -278,6 +283,76 @@
             color: var(--text-muted);
         }
 
+        /* ── Overview View ── */
+        #overview-view {
+            display: none;
+            flex: 1;
+            width: 100%;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        #overview-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        #overview-chart-area {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            height: clamp(300px, 65vh, 650px);
+        }
+        #overview-chart-area canvas { width: 100% !important; height: 100% !important; }
+        #overview-sidebar {
+            width: 160px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 4px;
+        }
+        .overview-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            background: var(--bg-surface);
+            font-family: var(--font);
+            text-align: left;
+            width: 100%;
+            transition: opacity 0.2s, box-shadow 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+        .overview-toggle:hover { box-shadow: var(--shadow-md); }
+        .overview-toggle.hidden-metric { opacity: 0.35; }
+        .overview-toggle-dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .overview-toggle-info { flex: 1; min-width: 0; }
+        .overview-toggle-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        .overview-toggle-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
         /* ── Grid View ── */
         #grid-view { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
         .keys-grid {
@@ -461,7 +536,8 @@
         <div class="key-info" id="key-info"></div>
         <div class="view-toggle">
             <button id="btn-single" class="active" onclick="switchView('single')">Single Key</button>
-            <button id="btn-all" onclick="switchView('grid')">All Keys</button>
+            <button id="btn-overview" onclick="switchView('overview')">All Keys</button>
+            <button id="btn-all" onclick="switchView('grid')">All Curves</button>
         </div>
     </header>
 
@@ -490,7 +566,17 @@
         </div>
     </div>
 
-    <!-- All Keys Grid -->
+    <!-- All Keys Overview -->
+    <div id="overview-view">
+        <div id="overview-layout">
+            <div id="overview-chart-area">
+                <canvas id="overview-canvas"></canvas>
+            </div>
+            <div id="overview-sidebar"></div>
+        </div>
+    </div>
+
+    <!-- All Curves Grid -->
     <div id="grid-view">
         <div class="keys-grid" id="keys-grid"></div>
     </div>
@@ -522,8 +608,17 @@ let validIndices = [];
 let currentKeyIndex = 0;
 let currentView = 'single';
 let singleChart = null;
+let overviewChart = null;
 let miniCharts = {};
 let gridObserver = null;
+
+const METRIC_CONFIG = [
+    { label: 'Down weight',    field: 'downweight_data',    color: '#5b9bd5', unit: 'g' },
+    { label: 'Balance weight', field: 'balanceweight_data', color: '#2ab3a3', unit: 'g' },
+    { label: 'Up weight',      field: 'upweight_data',      color: '#8b6db5', unit: 'g' },
+    { label: 'Friction',       field: 'friction_data',      color: '#e05c3a', unit: 'g' },
+    { label: 'Keydip',         field: 'keydip_data',        color: '#3a9c4a', unit: 'mm' },
+];
 
 // ── Utilities ──
 function getNoteName(keyNumber) {
@@ -841,27 +936,162 @@ function buildGrid() {
     });
 }
 
+// ── Overview View ──
+function buildOverview() {
+    if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
+    const canvas = document.getElementById('overview-canvas');
+    const datasets = METRIC_CONFIG.map(function(m) {
+        return {
+            label: m.label,
+            data: validIndices.map(function(i) { return { x: i, y: kmdData[m.field][i] }; }),
+            backgroundColor: m.color,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            showLine: false,
+        };
+    });
+    overviewChart = new Chart(canvas, {
+        type: 'scatter',
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 200 },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Key Number', font: { size: 13 }, color: '#666' },
+                    min: 0,
+                    max: 88,
+                    grid: { color: '#eee' },
+                    ticks: { color: '#888', font: { size: 11 } },
+                },
+                y: {
+                    title: { display: true, text: '(g) or (mm)', font: { size: 13 }, color: '#666' },
+                    min: 0,
+                    grid: { color: '#eee' },
+                    ticks: { color: '#888', font: { size: 11 } },
+                },
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(30,30,50,0.88)',
+                    titleFont: { size: 12 },
+                    bodyFont: { size: 12 },
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            const m = METRIC_CONFIG[ctx.datasetIndex];
+                            return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + m.unit;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: {
+                        selectedKey: {
+                            type: 'line',
+                            xMin: currentKeyIndex,
+                            xMax: currentKeyIndex,
+                            borderColor: 'rgba(0,0,0,0.35)',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                        }
+                    }
+                },
+            },
+            onClick: function(event) {
+                const xVal = overviewChart.scales.x.getValueForPixel(event.x);
+                if (xVal == null || validIndices.length === 0) return;
+                const nearest = validIndices.reduce(function(prev, curr) {
+                    return Math.abs(curr - xVal) < Math.abs(prev - xVal) ? curr : prev;
+                });
+                currentKeyIndex = nearest;
+                updateHeader();
+                updateOverviewSidebar();
+                const ann = overviewChart.options.plugins.annotation.annotations.selectedKey;
+                ann.xMin = nearest;
+                ann.xMax = nearest;
+                overviewChart.update('none');
+            },
+        },
+    });
+    buildOverviewSidebar();
+}
+
+function buildOverviewSidebar() {
+    const sidebar = document.getElementById('overview-sidebar');
+    sidebar.innerHTML = '';
+    METRIC_CONFIG.forEach(function(m, i) {
+        const btn = document.createElement('button');
+        btn.className = 'overview-toggle';
+        btn.dataset.index = i;
+        btn.innerHTML =
+            '<span class="overview-toggle-dot" style="background:' + m.color + '"></span>' +
+            '<span class="overview-toggle-info">' +
+                '<div class="overview-toggle-label">' + m.label + '</div>' +
+                '<div class="overview-toggle-value" id="ov-val-' + i + '">—</div>' +
+            '</span>';
+        btn.addEventListener('click', function() { toggleOverviewDataset(i); });
+        sidebar.appendChild(btn);
+    });
+    updateOverviewSidebar();
+}
+
+function updateOverviewSidebar() {
+    METRIC_CONFIG.forEach(function(m, i) {
+        const el = document.getElementById('ov-val-' + i);
+        if (!el) return;
+        const val = kmdData[m.field][currentKeyIndex];
+        el.textContent = val != null ? val.toFixed(1) + m.unit : '—';
+    });
+}
+
+function toggleOverviewDataset(index) {
+    const dataset = overviewChart.data.datasets[index];
+    dataset.hidden = !dataset.hidden;
+    const btn = document.querySelector('.overview-toggle[data-index="' + index + '"]');
+    btn.classList.toggle('hidden-metric', dataset.hidden);
+    overviewChart.update('none');
+}
+
 // ── View Switching ──
 function switchView(view) {
     currentView = view;
     const singleView = document.getElementById('single-view');
+    const overviewView = document.getElementById('overview-view');
     const gridView = document.getElementById('grid-view');
     const btnSingle = document.getElementById('btn-single');
+    const btnOverview = document.getElementById('btn-overview');
     const btnAll = document.getElementById('btn-all');
 
+    btnSingle.classList.remove('active');
+    btnOverview.classList.remove('active');
+    btnAll.classList.remove('active');
+
     if (view === 'single') {
+        if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
         destroyMiniCharts();
+        overviewView.style.display = 'none';
         gridView.style.display = 'none';
         singleView.style.display = '';
         btnSingle.classList.add('active');
-        btnAll.classList.remove('active');
         renderSingleView();
+    } else if (view === 'overview') {
+        if (singleChart) { singleChart.destroy(); singleChart = null; }
+        destroyMiniCharts();
+        singleView.style.display = 'none';
+        gridView.style.display = 'none';
+        overviewView.style.display = 'block';
+        btnOverview.classList.add('active');
+        buildOverview();
     } else {
         if (singleChart) { singleChart.destroy(); singleChart = null; }
+        if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
         singleView.style.display = 'none';
+        overviewView.style.display = 'none';
         gridView.style.display = 'block';
         btnAll.classList.add('active');
-        btnSingle.classList.remove('active');
         buildGrid();
     }
 }
@@ -914,6 +1144,7 @@ function downloadBlob(content, filename, mimeType) {
 
 function loadNewFile() {
     if (singleChart) { singleChart.destroy(); singleChart = null; }
+    if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
     destroyMiniCharts();
     kmdData = null;
     validIndices = [];
@@ -953,8 +1184,7 @@ document.addEventListener('keydown', function(e) {
         if (e.key === 'ArrowRight') { e.preventDefault(); navigateKey(1); }
     }
     if (e.key === 'Escape') {
-        if (currentView === 'single') switchView('grid');
-        else switchView('single');
+        switchView('single');
     }
 });
 
